@@ -274,6 +274,8 @@ public class TileBitmapDrawable extends Drawable {
 		public void onStartInitialization();
 
 		public void onEndInitialization();
+		
+		public void onImageSetFinished();
 	}
 
 	private static final class Tile {
@@ -399,6 +401,9 @@ public class TileBitmapDrawable extends Drawable {
 				mListener.onEndInitialization();
 			}
 			mImageView.setImageDrawable(result);
+			if(mListener != null) {
+				mListener.onImageSetFinished();
+			}
 		}
 	}
 
