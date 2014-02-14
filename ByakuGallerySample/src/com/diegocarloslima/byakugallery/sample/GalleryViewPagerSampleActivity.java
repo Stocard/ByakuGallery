@@ -79,6 +79,10 @@ public class GalleryViewPagerSampleActivity extends FragmentActivity {
 				public void onEndInitialization() {
 					progress.setVisibility(View.GONE);
 				}
+
+				@Override
+				public void onImageSetFinished() {
+				}
 			});
 			
 			return v;
