@@ -80,6 +80,12 @@ public class TileBitmapDrawable extends Drawable {
 		new InitializationTask(imageView, placeHolder, listener).execute(is);
 	}
 
+	
+	public void recycle(){
+		mRegionDecoder.recycle();
+		sBitmapCache.evictAll();
+		System.gc();
+	}
 	private TileBitmapDrawable(ImageView parentView, BitmapRegionDecoder decoder, Bitmap screenNail) {
 		mParentView = new WeakReference<ImageView>(parentView);
 
@@ -359,7 +365,6 @@ public class TileBitmapDrawable extends Drawable {
 		@Override
 		protected TileBitmapDrawable doInBackground(Object... params) {
 			BitmapRegionDecoder decoder = null;
-
 			try {
 				if(params[0] instanceof String) {
 					decoder = BitmapRegionDecoder.newInstance((String) params[0], false);
@@ -391,7 +396,7 @@ public class TileBitmapDrawable extends Drawable {
 			screenNail = Bitmap.createScaledBitmap(screenNail, Math.round(decoder.getWidth() * minScale), Math.round(decoder.getHeight() * minScale), true);
 
 			TileBitmapDrawable drawable = new TileBitmapDrawable(mImageView, decoder, screenNail);
-
+			
 			return drawable;
 		}
 
@@ -443,12 +448,12 @@ public class TileBitmapDrawable extends Drawable {
 						continue;
 					}
 				}
-
 				final BitmapFactory.Options options = new BitmapFactory.Options();
 				options.inPreferredConfig = Config.ARGB_8888;
 				options.inPreferQualityOverSpeed = true;
 				options.inSampleSize =  (1 << tile.mLevel);
-
+				// XXX inBitmap
+				
 				Bitmap bitmap;
 				synchronized(mDecoder) {
 					bitmap = mDecoder.decodeRegion(tile.mTileRect, options);
