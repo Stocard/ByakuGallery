@@ -82,7 +82,7 @@ public class TileBitmapDrawable extends Drawable {
 
 	
 	public void recycle(){
-		mRegionDecoder.recycle();
+//		mRegionDecoder.recycle();
 		sBitmapCache.evictAll();
 		System.gc();
 	}
