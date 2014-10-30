@@ -1,13 +1,5 @@
 package com.diegocarloslima.byakugallery.lib;
 
-import java.io.FileDescriptor;
-import java.io.InputStream;
-import java.lang.ref.WeakReference;
-import java.util.Arrays;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -28,6 +20,16 @@ import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.WindowManager;
 import android.widget.ImageView;
+
+import java.io.ByteArrayOutputStream;
+import java.io.FileDescriptor;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.ref.WeakReference;
+import java.util.Arrays;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TileBitmapDrawable extends Drawable {
 
@@ -340,6 +342,21 @@ public class TileBitmapDrawable extends Drawable {
 		}
 	}
 
+	private static byte[] readInputStream(InputStream is) throws IOException {
+		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+
+		int nRead;
+		byte[] data = new byte[16384];
+
+		while ((nRead = is.read(data, 0, data.length)) != -1) {
+			buffer.write(data, 0, nRead);
+		}
+
+		buffer.flush();
+
+		return buffer.toByteArray();
+	}
+
 	private static final class InitializationTask extends AsyncTask<Object, Void, TileBitmapDrawable> {
 
 		private final ImageView mImageView;
@@ -366,8 +383,18 @@ public class TileBitmapDrawable extends Drawable {
 				} else if(params[0] instanceof FileDescriptor) {
 					decoder = BitmapRegionDecoder.newInstance((FileDescriptor) params[0], false);
 				} else {
-					decoder = BitmapRegionDecoder.newInstance((InputStream) params[0], false);
-				} 
+					byte[] byteArray = readInputStream((InputStream) params[0]);
+					try {
+						decoder = BitmapRegionDecoder.newInstance(byteArray, 0, byteArray.length, false);
+					} catch(IOException e) {
+						Bitmap bmp = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
+						ByteArrayOutputStream stream = new ByteArrayOutputStream();
+						bmp.compress(Bitmap.CompressFormat.PNG, 100, stream);
+						byte[] newByteArray = stream.toByteArray();
+						stream.close();
+						decoder = BitmapRegionDecoder.newInstance(newByteArray, 0, newByteArray.length, false);
+					}
+				}
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
