@@ -376,23 +376,29 @@ public class TileBitmapDrawable extends Drawable {
 
 		@Override
 		protected TileBitmapDrawable doInBackground(Object... params) {
-			BitmapRegionDecoder decoder = null;
+			BitmapRegionDecoder decoder;
 			try {
-				if(params[0] instanceof String) {
-					decoder = BitmapRegionDecoder.newInstance((String) params[0], false);
-				} else if(params[0] instanceof FileDescriptor) {
-					decoder = BitmapRegionDecoder.newInstance((FileDescriptor) params[0], false);
+				final Object sourceParam = params[0];
+				if(sourceParam instanceof String) {
+					decoder = BitmapRegionDecoder.newInstance((String) sourceParam, false);
+				} else if(sourceParam instanceof FileDescriptor) {
+					decoder = BitmapRegionDecoder.newInstance((FileDescriptor) sourceParam, false);
 				} else {
-					byte[] byteArray = readInputStream((InputStream) params[0]);
+					byte[] byteArray = readInputStream((InputStream) sourceParam);
 					try {
 						decoder = BitmapRegionDecoder.newInstance(byteArray, 0, byteArray.length, false);
 					} catch(IOException e) {
 						Bitmap bmp = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
-						ByteArrayOutputStream stream = new ByteArrayOutputStream();
-						bmp.compress(Bitmap.CompressFormat.PNG, 100, stream);
-						byte[] newByteArray = stream.toByteArray();
-						stream.close();
-						decoder = BitmapRegionDecoder.newInstance(newByteArray, 0, newByteArray.length, false);
+						if (bmp == null) {
+							throw new NullPointerException("Decoding byte array (length=" + byteArray.length + ") failed!" +
+									"Initial object was of type " + sourceParam.getClass().getName());
+						} else {
+							ByteArrayOutputStream stream = new ByteArrayOutputStream();
+							bmp.compress(Bitmap.CompressFormat.PNG, 100, stream);
+							byte[] newByteArray = stream.toByteArray();
+							stream.close();
+							decoder = BitmapRegionDecoder.newInstance(newByteArray, 0, newByteArray.length, false);
+						}
 					}
 				}
 			} catch (Exception e) {
@@ -427,9 +433,7 @@ public class TileBitmapDrawable extends Drawable {
 				screenNail = decoder.decodeRegion(screenNailRect, options);
 			}
 
-			TileBitmapDrawable drawable = new TileBitmapDrawable(mImageView, decoder, screenNail);
-			
-			return drawable;
+			return new TileBitmapDrawable(mImageView, decoder, screenNail);
 		}
 
 		@Override
